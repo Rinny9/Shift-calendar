@@ -1,4 +1,4 @@
-const CACHE_NAME = 'schedules-v2';
+const CACHE_NAME = 'schedules-v3';
 
 self.addEventListener('install', event => { self.skipWaiting(); });
 

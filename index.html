@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Rinaldo's Schedules</title>
-<meta name="description" content="Work schedule and ACP clinical schedule for Rinaldo Gjergji">
+<meta name="description" content="Work schedule and ACP rideout planner for Rinaldo Gjergji">
 <meta name="theme-color" content="#0b0e13">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -208,76 +208,71 @@
   .tab-content { display: none; }
   .tab-content.active { display: block; }
 
-  /* ─── ACP Schedule ─── */
-  .acp-wrap { padding: 0 4px; }
-  .acp-header-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: #60a5fa; margin-bottom: 4px; }
-  .acp-header-title { font-size: 24px; font-weight: 800; color: var(--text); margin-bottom: 18px; letter-spacing: -0.03em; }
-  .acp-legend {
-    display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 12px 16px;
-    background: var(--surface); border-radius: 8px; border: 1px solid var(--border); margin-bottom: 22px;
-  }
-  .acp-legend-title { font-size: 11px; font-weight: 600; color: var(--text-muted); width: 100%; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.06em; }
-  .acp-legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text); font-weight: 500; }
-  .acp-legend-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
-  .acp-month-title { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--accent); margin-bottom: 10px; }
-  .acp-grid {
-    display: grid; grid-template-columns: repeat(7,1fr); gap: 1px;
-    background: var(--border); border-radius: 10px; overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2); margin-bottom: 28px;
-  }
-  .acp-day-hdr {
-    background: var(--surface-2); padding: 8px 0; text-align: center;
-    font-weight: 600; font-size: 11px; color: var(--text-muted);
-    text-transform: uppercase; letter-spacing: 0.1em;
-  }
-  .acp-cell {
-    background: var(--surface); min-height: 80px; padding: 5px; position: relative;
-  }
-  .acp-cell.weekend { background: var(--surface-2); }
-  .acp-cell.empty { background: rgba(255,255,255,0.02); }
-  .acp-cell.has-double { min-height: 108px; }
-  .acp-day-num { font-size: 12px; font-weight: 400; color: var(--text-muted); margin-bottom: 3px; }
-  .acp-cell.has-event .acp-day-num { font-weight: 700; color: var(--text); }
-  .acp-tag {
-    border-radius: 5px; padding: 3px 6px; color: #fff;
-    font-size: 10.5px; font-weight: 600; line-height: 1.3;
-    margin-bottom: 2px; cursor: pointer; position: relative;
-    transition: transform 0.1s ease, box-shadow 0.1s ease;
-  }
-  .acp-tag:hover { transform: scale(1.04); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
-  .acp-tag-time { font-weight: 400; font-size: 9.5px; opacity: 0.92; }
-  .acp-tip {
-    display: none; position: absolute; bottom: calc(100% + 8px); left: 50%;
-    transform: translateX(-50%); background: #1e2430; color: #f1f5f9;
-    border-radius: 8px; padding: 10px 14px; font-size: 12px; line-height: 1.5;
-    white-space: nowrap; z-index: 100; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-    border: 1px solid var(--border); pointer-events: none;
-  }
-  .acp-tag:hover .acp-tip { display: block; }
-  .acp-tip-label { font-weight: 700; font-size: 13px; }
-  .acp-tip-time { opacity: 0.8; }
-  .acp-tip-loc { margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; gap: 6px; }
-  .acp-tip-loc-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
-
-  .acp-toggle-btn {
-    font-family: var(--font); font-size: 13px; font-weight: 600;
-    color: var(--accent); background: var(--accent-dim); border: 1px solid rgba(96,165,250,0.25);
-    border-radius: 8px; padding: 10px 18px; cursor: pointer; margin-bottom: 16px;
-  }
-  .acp-list { display: none; background: var(--surface); border-radius: 10px; padding: 16px 12px; border: 1px solid var(--border); overflow-x: auto; margin-bottom: 16px; }
-  .acp-list.active { display: block; }
-  .acp-list table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .acp-list th { padding: 8px 10px; font-weight: 600; color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; text-align: left; border-bottom: 2px solid var(--border); }
-  .acp-list td { padding: 10px; border-bottom: 1px solid var(--border); color: var(--text); }
-  .acp-list .rot-badge { display: inline-block; color: #fff; border-radius: 4px; padding: 3px 9px; font-size: 12px; font-weight: 600; }
-  .acp-footnote { margin-top: 20px; font-size: 11px; color: var(--text-muted); line-height: 1.6; }
+  /* ─── Rideout Planner ─── */
+  .rp-wrap { padding: 0 4px; }
+  .rp-header-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: var(--accent); margin-bottom: 4px; }
+  .rp-header-title { font-size: 24px; font-weight: 800; color: var(--text); margin-bottom: 6px; letter-spacing: -0.03em; }
+  .rp-intro { font-size: 12.5px; color: var(--text-muted); line-height: 1.55; margin-bottom: 14px; max-width: 720px; }
+  .rp-intro b { color: var(--text); }
+  .rp-strip { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .rp-chip { display: flex; align-items: baseline; gap: 7px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 7px 12px; }
+  .rp-chip .n { font-weight: 700; font-size: 19px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .rp-chip .l { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; }
+  .rp-chip.book .n { color: #f59e0b; }
+  .rp-chip.free .n { color: var(--day-color); }
+  .rp-chip.blk .n { color: #c084fc; }
+  .rp-chip.att .n { color: var(--accent); }
+  .rp-chip.tof .n { color: #eab308; }
+  .rp-chip.pulse .n { animation: rpPop .35s ease; }
+  @keyframes rpPop { 0%{transform:scale(1)} 40%{transform:scale(1.22)} 100%{transform:scale(1)} }
+  .rp-controls { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; margin-bottom: 10px; }
+  .rp-range { font-size: 12px; font-weight: 600; background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border); border-radius: 16px; padding: 6px 13px; cursor: pointer; font-family: var(--font); }
+  .rp-range:hover { color: var(--text); }
+  .rp-range.active { background: var(--accent); color: #0b0e13; border-color: var(--accent); }
+  .rp-reset { font-size: 12px; background: none; color: var(--text-muted); border: 1px dashed var(--border); border-radius: 16px; padding: 6px 13px; cursor: pointer; font-family: var(--font); margin-left: auto; }
+  .rp-reset:hover { color: #ef4444; border-color: #ef4444; }
+  .rp-legend { display: flex; flex-wrap: wrap; gap: 5px 14px; font-size: 11.5px; color: var(--text-muted); margin-bottom: 4px; }
+  .rp-legend span { display: flex; align-items: center; gap: 5px; }
+  .rp-sw { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+  .rp-hint { font-size: 11.5px; color: var(--text-muted); margin-bottom: 14px; }
+  .rp-hint b { color: #eab308; }
+  .rp-months { display: grid; gap: 18px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); margin-bottom: 20px; }
+  .rp-month { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
+  .rp-month h3 { font-family: var(--font-display); font-size: 18px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+  .rp-month h3 small { font-family: var(--font); font-size: 11px; color: var(--text-muted); font-weight: 400; margin-left: 6px; }
+  .rp-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .rp-dow { font-size: 9.5px; color: var(--text-muted); text-align: center; padding-bottom: 3px; text-transform: uppercase; font-weight: 600; }
+  .rp-day { position: relative; border-radius: 6px; min-height: 50px; padding: 4px; font-size: 10.5px; display: flex; flex-direction: column; gap: 2px; background: var(--surface-2); color: var(--text-muted); user-select: none; transition: filter .12s, transform .12s; }
+  .rp-day .num { font-weight: 700; font-size: 11.5px; line-height: 1; }
+  .rp-day .sh { font-size: 8.8px; line-height: 1.3; opacity: .95; font-variant-numeric: tabular-nums; }
+  .rp-day.clickable { cursor: pointer; }
+  .rp-day.clickable:hover { filter: brightness(1.18); transform: translateY(-1px); }
+  .rp-day.OVS { background: #c33; color: #fff; }
+  .rp-day.OVD { background: #d97a06; color: #fff; }
+  .rp-day.FREE { background: #2a8c41; color: #fff; }
+  .rp-day.BLK { background: #8e4ec6; color: #fff; }
+  .rp-day.WORK { background: #2563eb; color: #fff; }
+  .rp-day.tof { box-shadow: inset 0 0 0 2px #eab308; }
+  .rp-day .star { position: absolute; top: 2px; right: 4px; color: #eab308; font-size: 10px; text-shadow: 0 0 4px rgba(0,0,0,.6); }
+  .rp-day.outside { visibility: hidden; }
+  .rp-lists { display: grid; gap: 12px; margin-bottom: 16px; }
+  .rp-lists details { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .rp-lists summary { cursor: pointer; padding: 12px 16px; font-weight: 700; font-size: 14px; list-style: none; display: flex; align-items: center; gap: 9px; }
+  .rp-lists summary::-webkit-details-marker { display: none; }
+  .rp-cnt { font-size: 11px; font-weight: 700; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 2px 9px; color: var(--text-muted); }
+  .rp-arrow { margin-left: auto; color: var(--text-muted); transition: transform .15s; }
+  .rp-lists details[open] .rp-arrow { transform: rotate(90deg); }
+  .rp-rows { padding: 2px 16px 14px; display: grid; gap: 5px; grid-template-columns: repeat(auto-fill, minmax(235px, 1fr)); }
+  .rp-row { font-size: 11.5px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 7px; padding: 6px 10px; display: flex; gap: 8px; align-items: center; font-variant-numeric: tabular-nums; }
+  .rp-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .rp-row .why { color: var(--text-muted); font-size: 10px; margin-left: auto; text-align: right; }
+  .rp-empty { color: var(--text-muted); font-size: 12.5px; padding: 0 16px 14px; font-style: italic; }
+  .rp-foot { font-size: 10.5px; color: var(--text-muted); line-height: 1.6; }
 
   @media (max-width: 600px) {
-    .acp-cell { min-height: 62px; padding: 3px; }
-    .acp-cell.has-double { min-height: 88px; }
-    .acp-day-num { font-size: 10px; }
-    .acp-tag { font-size: 9px; padding: 2px 4px; }
-    .acp-tag-time { font-size: 8px; }
+    .rp-day { min-height: 46px; padding: 3px; }
+    .rp-day .sh { font-size: 8px; }
+    .rp-chip .n { font-size: 16px; }
   }
 </style>
 </head>
@@ -290,7 +285,7 @@
 
   <div class="tab-bar">
     <button class="tab-btn active" onclick="switchTab('work')">Work Schedule</button>
-    <button class="tab-btn" onclick="switchTab('acp')">ACP Clinical</button>
+    <button class="tab-btn" onclick="switchTab('rideout')">Rideout Planner</button>
   </div>
 
   <!-- ═══ WORK SCHEDULE TAB ═══ -->
@@ -327,34 +322,54 @@
   <div id="calendarContainer"></div>
   </div><!-- end tab-work -->
 
-  <!-- ═══ ACP CLINICAL TAB ═══ -->
-  <div class="tab-content" id="tab-acp">
-    <div class="acp-wrap">
-      <div class="acp-header-label">ACP Clinical Schedule — Spring/Summer 2026</div>
-      <div class="acp-header-title">Clinical Placements</div>
+  <!-- ═══ RIDEOUT PLANNER TAB ═══ -->
+  <div class="tab-content" id="tab-rideout">
+    <div class="rp-wrap">
+      <div class="rp-header-label">ACP Preceptorship — R3 × Platoon B — 2026</div>
+      <div class="rp-header-title">Rideout Planner</div>
+      <p class="rp-intro"><b>Tap any of your scheduled shifts to book it off</b> — everything recomputes live. Night rule: <b>no precepting the day after you finish a night</b> (your night ends the next morning). Shift trades from your FTCC schedule are included; FTCC days are labelled.</p>
 
-      <div class="acp-legend">
-        <div class="acp-legend-title">Locations</div>
-        <div class="acp-legend-item"><div class="acp-legend-dot" style="background:#6A9FD8"></div> Lakeridge Health Oshawa</div>
-        <div class="acp-legend-item"><div class="acp-legend-dot" style="background:#6EAF5E"></div> Lakeridge Health Ajax/Pickering</div>
-        <div class="acp-legend-item"><div class="acp-legend-dot" style="background:#9B84C4"></div> Durham College / Online</div>
+      <div class="rp-strip">
+        <div class="rp-chip book"><span class="n" id="rpBook">–</span><span class="l">to book off</span></div>
+        <div class="rp-chip free"><span class="n" id="rpFree">–</span><span class="l">free rideouts</span></div>
+        <div class="rp-chip blk"><span class="n" id="rpBlk">–</span><span class="l">blocked</span></div>
+        <div class="rp-chip att"><span class="n" id="rpAtt">–</span><span class="l">attendable</span></div>
+        <div class="rp-chip tof"><span class="n" id="rpTof">–</span><span class="l">booked off ★</span></div>
       </div>
 
-      <div id="acpCalendars"></div>
+      <div class="rp-controls" id="rpRanges"></div>
 
-      <button class="acp-toggle-btn" onclick="toggleAcpList()">Show List View</button>
-      <div class="acp-list" id="acpListView">
-        <table>
-          <thead><tr><th>Date</th><th>Rotation</th><th>Time</th><th>Location</th></tr></thead>
-          <tbody id="acpListBody"></tbody>
-        </table>
+      <div class="rp-legend">
+        <span><span class="rp-sw" style="background:#c33"></span>Book off — same shift</span>
+        <span><span class="rp-sw" style="background:#d97a06"></span>Book off — diff shift</span>
+        <span><span class="rp-sw" style="background:#2a8c41"></span>Free rideout</span>
+        <span><span class="rp-sw" style="background:#8e4ec6"></span>Blocked post-night</span>
+        <span><span class="rp-sw" style="background:#2563eb"></span>Your shift (B off)</span>
+        <span><span class="rp-sw" style="background:var(--surface-2);border:1px solid var(--border)"></span>Both off</span>
+        <span><span class="rp-sw" style="background:none;border:2px solid #eab308"></span>★ Booked off</span>
+      </div>
+      <div class="rp-hint">Hover/long-press a purple day to see which night blocks it. <b>Book off that night to unlock it.</b></div>
+
+      <div class="rp-months" id="rpMonths"></div>
+
+      <div class="rp-lists">
+        <details open>
+          <summary><span class="rp-dot" style="background:#d97a06"></span>Shifts to book off <span class="rp-cnt" id="rpNBook">0</span><span class="rp-arrow">›</span></summary>
+          <div class="rp-rows" id="rpListBook"></div>
+        </details>
+        <details>
+          <summary><span class="rp-dot" style="background:#2a8c41"></span>Free rideout days <span class="rp-cnt" id="rpNFree">0</span><span class="rp-arrow">›</span></summary>
+          <div class="rp-rows" id="rpListFree"></div>
+        </details>
+        <details>
+          <summary><span class="rp-dot" style="background:#8e4ec6"></span>Blocked days <span class="rp-cnt" id="rpNBlk">0</span><span class="rp-arrow">›</span></summary>
+          <div class="rp-rows" id="rpListBlk"></div>
+        </details>
       </div>
 
-      <div class="acp-footnote">
-        Hover/tap an event for details. OR shifts: ask for subsequent start times after the first day.
-      </div>
+      <div class="rp-foot" id="rpSave">Sources: 2026 Master Rotation (R3 + B) · personal FTCC schedule (trades, VAC/STA/PERS, FTCC block). Jul 5 &amp; Jul 21 are FTCC days with K. Goncharenko — confirm whether those already count as placement days before booking off.</div>
     </div>
-  </div><!-- end tab-acp -->
+  </div><!-- end tab-rideout -->
 </div>
 
 <script>
@@ -815,85 +830,234 @@ function switchTab(tab) {
   document.querySelector(`.tab-btn[onclick="switchTab('${tab}')"]`).classList.add('active');
 }
 
-// ─── ACP Clinical Schedule ───
-const ACP_EVENTS = [
-  { date:"2026-05-06", label:"ER1", time:"0800–1800", location:"Lakeridge Health Ajax/Pickering", color:"#6EAF5E" },
-  { date:"2026-05-08", label:"OR1", time:"0700–1500", location:"Lakeridge Health Oshawa", color:"#6A9FD8" },
-  { date:"2026-05-11", label:"OR2", time:"0700–1500", location:"Lakeridge Health Oshawa", color:"#6A9FD8" },
-  { date:"2026-05-14", label:"ER2", time:"0800–1800", location:"Lakeridge Health Oshawa", color:"#6A9FD8" },
-  { date:"2026-05-15", label:"IV (2)", time:"0700–1500", location:"Lakeridge Health Ajax/Pickering", color:"#6EAF5E" },
-  { date:"2026-05-22", label:"ICU", time:"0700–1900", location:"Lakeridge Health Oshawa", color:"#6A9FD8" },
-  { date:"2026-05-25", label:"ER3", time:"0800–1800", location:"Lakeridge Health Oshawa", color:"#6A9FD8" },
-  { date:"2026-05-26", label:"L&D", time:"0700–1500", location:"Lakeridge Health Oshawa", color:"#6A9FD8" },
-  { date:"2026-06-01", label:"Clin. Residency", time:"TBD", location:"Lakeridge Health Ajax/Pickering", color:"#6EAF5E" },
-  { date:"2026-06-08", label:"Base Hosp. Cert.", time:"TBD", location:"Durham College / Online", color:"#9B84C4" },
-  { date:"2026-07-05", label:"OR3", time:"0700–1500", location:"Lakeridge Health Oshawa", color:"#6A9FD8" },
-  { date:"2026-07-21", label:"OR4", time:"0700–1500", location:"Lakeridge Health Oshawa", color:"#6A9FD8" },
-];
+// ─── Rideout Planner (R3 × B) ───
+(function () {
+  // Parsed from 2026 Master Schedule Rotation: Dec 22 2025 – Jan 17 2027
+  const START = new Date(2025, 11, 22);
+  const R3 = "...DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN.";
+  const B  = "....NNNN...DDD.NNN...DDDD.......NNNN...DDD.NNN...DDDD.......NNNN...DDD.NNN...DDDD.......NNNN...DDD.NNN...DDDD.......NNNN...DDD.NNN...DDDD.......NNNN...DDD.NNN...DDDD.......NNNN...DDD.NNN...DDDD.......NNNN...DDD.NNN...DDDD.......NNNN...DDD.NNN...DDDD.......NNNN...DDD.NNN...DDDD.......NNNN...DDD.NNN...DDDD.......NNNN...DDD.NNN...DDDD.......NNNN...DDD.NNN...DDDD.......NNNN...DDD.NNN...DDDD...";
+  const N_DAYS = R3.length;
 
-const ACP_DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  // Actual-schedule overrides from the personal FTCC schedule (trades & FTCC conversions)
+  const OVR = {
+    "2026-05-22": ["N", "SV-2 1830 trade"],
+    "2026-06-15": ["N", "TK-1 1900 trade"],
+    "2026-06-16": ["N", "TK-1 1900 trade"],
+    "2026-07-03": ["D", "SV-2 0530 trade"],
+    "2026-07-04": ["D", "SV-2 0530 trade"],
+    "2026-07-11": ["D", "SV-3 0630 trade"],
+    "2026-07-21": ["D", "FTCC \u00b7 K. Goncharenko"]
+  };
+  const EXTRA_LABEL = { "2026-07-05": "FTCC \u00b7 K. Goncharenko" };
+  const FTCC_FROM = "2026-08-06"; // worked days from here are FTCC block shifts
 
-function buildAcpCalendars() {
-  const container = document.getElementById('acpCalendars');
-  [{year:2026,month:4,name:"May"},{year:2026,month:5,name:"June"},{year:2026,month:6,name:"July"}].forEach(({year,month,name}) => {
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month+1, 0).getDate();
-    let html = `<h2 class="acp-month-title">${name} ${year}</h2><div class="acp-grid">`;
-    ACP_DAYS.forEach(d => { html += `<div class="acp-day-hdr">${d}</div>`; });
-    for (let i = 0; i < firstDay; i++) html += `<div class="acp-cell empty"></div>`;
-    for (let d = 1; d <= daysInMonth; d++) {
-      const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      const evts = ACP_EVENTS.filter(e => e.date === ds);
-      const dow = (firstDay + d - 1) % 7;
-      const isWknd = dow === 0 || dow === 6;
-      const cls = ['acp-cell'];
-      if (isWknd) cls.push('weekend');
-      if (evts.length) cls.push('has-event');
-      if (evts.length > 1) cls.push('has-double');
-      html += `<div class="${cls.join(' ')}"><div class="acp-day-num">${d}</div>`;
-      evts.forEach(ev => {
-        html += `<div class="acp-tag" style="background:${ev.color}">
-          ${ev.label}<div class="acp-tag-time">${ev.time}</div>
-          <div class="acp-tip">
-            <div class="acp-tip-label">${ev.label}</div>
-            <div class="acp-tip-time">${ev.time}</div>
-            <div class="acp-tip-loc"><div class="acp-tip-loc-dot" style="background:${ev.color}"></div><span>${ev.location}</span></div>
-          </div>
-        </div>`;
-      });
-      html += `</div>`;
+  // Booked off per FTCC schedule: VAC / STA / PERS
+  const SEED_TIME_OFF = ["2026-05-05","2026-07-13","2026-07-16","2026-07-22","2026-07-23",
+    "2026-07-29","2026-07-30","2026-08-14","2026-08-16","2026-08-17","2026-08-25"];
+
+  const fmtISO = d => {
+    const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,"0"), dd = String(d.getDate()).padStart(2,"0");
+    return y + "-" + m + "-" + dd;
+  };
+  const addDays = (d,n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
+  const idxOf = iso => Math.round((new Date(iso+"T00:00:00") - START) / 86400000);
+
+  let timeOff = new Set(SEED_TIME_OFF);
+  let range = { from:[2026,6], to:[2026,9], key:"junsep" };
+  const KEY = "rp-timeoff-v2";
+
+  function loadSaved() {
+    try {
+      const v = localStorage.getItem(KEY);
+      if (v) { timeOff = new Set(JSON.parse(v)); note("loaded saved book-offs"); }
+    } catch (e) { /* private mode etc. */ }
+  }
+  let saveT;
+  function persist() {
+    clearTimeout(saveT);
+    saveT = setTimeout(() => {
+      try { localStorage.setItem(KEY, JSON.stringify([...timeOff])); note("changes saved on this device"); }
+      catch (e) { note("changes held in memory only"); }
+    }, 300);
+  }
+  function note(msg) {
+    const f = document.getElementById("rpSave");
+    if (f) f.dataset.msg !== msg && (f.innerHTML = f.innerHTML.replace(/( \u00b7 <em>.*<\/em>)?$/, " \u00b7 <em>" + msg + "</em>"), f.dataset.msg = msg);
+  }
+
+  function baseShift(i, iso) {
+    if (i < 0 || i >= N_DAYS) return ".";
+    if (OVR[iso]) return OVR[iso][0];
+    return R3[i];
+  }
+  function eff(i) {
+    if (i < 0 || i >= N_DAYS) return ".";
+    const iso = fmtISO(addDays(START, i));
+    return timeOff.has(iso) ? "." : baseShift(i, iso);
+  }
+  function classify(i) {
+    const r3 = eff(i), b = B[i], prevN = eff(i-1) === "N";
+    if (b === ".") return r3 === "." ? "OFFB" : "WORK";
+    if (prevN) return "BLK";
+    if (r3 === ".") return "FREE";
+    return r3 === b ? "OVS" : "OVD";
+  }
+  function labelFor(iso, i) {
+    if (OVR[iso]) return OVR[iso][1];
+    if (EXTRA_LABEL[iso]) return EXTRA_LABEL[iso];
+    if (iso >= FTCC_FROM && R3[i] !== ".") return "FTCC";
+    return null;
+  }
+
+  const PRESETS = [
+    { key:"junsep", label:"Jun\u2013Sep", from:[2026,6], to:[2026,9] },
+    { key:"h1",     label:"Jan\u2013May", from:[2026,1], to:[2026,5] },
+    { key:"q4",     label:"Oct\u2013Dec", from:[2026,10], to:[2026,12] },
+    { key:"full",   label:"Full 2026", from:[2026,1], to:[2026,12] }
+  ];
+  function monthsInRange() {
+    const out = []; let y = range.from[0], m = range.from[1];
+    while (y < range.to[0] || (y === range.to[0] && m <= range.to[1])) {
+      out.push([y, m]); m++; if (m > 12) { m = 1; y++; }
     }
-    const total = firstDay + daysInMonth;
-    const rem = total % 7;
-    if (rem) for (let i = 0; i < 7 - rem; i++) html += `<div class="acp-cell empty"></div>`;
-    html += `</div>`;
-    container.innerHTML += html;
-  });
-}
+    return out;
+  }
 
-function buildAcpList() {
-  const tbody = document.getElementById('acpListBody');
-  ACP_EVENTS.forEach(ev => {
-    const d = new Date(ev.date + 'T12:00:00');
-    const fmt = d.toLocaleDateString('en-CA', { weekday:'short', month:'short', day:'numeric' });
-    tbody.innerHTML += `<tr>
-      <td style="font-weight:500;white-space:nowrap">${fmt}</td>
-      <td><span class="rot-badge" style="background:${ev.color}">${ev.label}</span></td>
-      <td style="color:var(--text-muted)">${ev.time}</td>
-      <td><span style="display:inline-flex;align-items:center;gap:5px;font-weight:500"><span style="width:8px;height:8px;border-radius:2px;background:${ev.color};display:inline-block;flex-shrink:0"></span>${ev.location}</span></td>
-    </tr>`;
-  });
-}
+  const CAT_TXT = { OVS:"Book off (same shift)", OVD:"Book off (different shift)", FREE:"Free rideout",
+    BLK:"Blocked \u2014 you finish a night this morning", WORK:"Your shift (B off)", OFFB:"Both off" };
+  const DOWS = ["Mo","Tu","We","Th","Fr","Sa","Su"];
+  const prevVals = {};
 
-function toggleAcpList() {
-  const lv = document.getElementById('acpListView');
-  const btn = document.querySelector('.acp-toggle-btn');
-  lv.classList.toggle('active');
-  btn.textContent = lv.classList.contains('active') ? 'Hide List View' : 'Show List View';
-}
+  function setChip(id, val, animate) {
+    const el = document.getElementById(id);
+    const changed = prevVals[id] !== undefined && prevVals[id] !== val;
+    el.textContent = val; prevVals[id] = val;
+    if (animate && changed) {
+      const chip = el.closest(".rp-chip");
+      chip.classList.remove("pulse"); void chip.offsetWidth; chip.classList.add("pulse");
+    }
+  }
+  function rowHTML(color, main, why) {
+    return '<div class="rp-row"><span class="rp-dot" style="background:' + color + '"></span>' + main +
+           '<span class="why">' + why + '</span></div>';
+  }
+  function fillList(id, rows, emptyMsg) {
+    const el = document.getElementById(id);
+    el.innerHTML = rows.length ? rows.join("") : "";
+    let sib = el.parentElement.querySelector(".rp-empty");
+    if (sib) sib.remove();
+    if (!rows.length) {
+      const e = document.createElement("div"); e.className = "rp-empty"; e.textContent = emptyMsg;
+      el.parentElement.appendChild(e);
+    }
+  }
 
-buildAcpCalendars();
-buildAcpList();
+  function render(animate) {
+    const cont = document.getElementById("rpMonths");
+    cont.innerHTML = "";
+    const stats = { book:0, free:0, blk:0, tof:0 };
+    const lists = { book:[], free:[], blk:[] };
+
+    monthsInRange().forEach(ym => {
+      const y = ym[0], m = ym[1];
+      const first = new Date(y, m-1, 1);
+      const dim = new Date(y, m, 0).getDate();
+      const lead = (first.getDay() + 6) % 7;
+      const mEl = document.createElement("div");
+      mEl.className = "rp-month";
+      mEl.innerHTML = "<h3>" + first.toLocaleString("en-CA", { month:"long" }) + "<small>" + y + "</small></h3>";
+      const g = document.createElement("div");
+      g.className = "rp-grid";
+      DOWS.forEach(d => { const e = document.createElement("div"); e.className = "rp-dow"; e.textContent = d; g.appendChild(e); });
+      for (let k = 0; k < lead; k++) { const e = document.createElement("div"); e.className = "rp-day outside"; g.appendChild(e); }
+
+      for (let day = 1; day <= dim; day++) {
+        const date = new Date(y, m-1, day);
+        const iso = fmtISO(date);
+        const i = idxOf(iso);
+        const e = document.createElement("div");
+        if (i < 0 || i >= N_DAYS) { e.className = "rp-day OFFB"; e.innerHTML = '<span class="num">'+day+'</span>'; g.appendChild(e); continue; }
+
+        const cat = classify(i);
+        const isTof = timeOff.has(iso);
+        const base = baseShift(i, iso);
+        const lbl = labelFor(iso, i);
+        e.className = "rp-day " + cat + (isTof ? " tof" : "");
+        const unit = lbl ? lbl.split(" ")[0] + " " : "";
+        const r3disp = isTof ? "OFF" : (base === "." ? "\u2014" : unit + base);
+        const bdisp = B[i] === "." ? "\u2014" : B[i];
+        e.innerHTML = '<span class="num">'+day+'</span><span class="sh">'+r3disp+' \u00b7 B '+bdisp+'</span>' + (isTof ? '<span class="star">\u2605</span>' : "");
+
+        let tip = date.toDateString() + " \u2014 " + CAT_TXT[cat];
+        if (lbl) tip += " \u00b7 " + lbl;
+        if (cat === "BLK") {
+          tip += ". Book off the " + fmtISO(addDays(date,-1)) + " night to unlock";
+          if (base !== "." && !isTof) tip += " (this is also your scheduled shift)";
+        }
+        if (base !== ".") tip += isTof ? ". Tap to restore this shift" : ". Tap to book this shift off";
+        e.title = tip;
+
+        if (base !== ".") {
+          e.classList.add("clickable");
+          e.tabIndex = 0;
+          e.setAttribute("role", "button");
+          e.addEventListener("click", () => toggle(iso));
+          e.addEventListener("keydown", ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); toggle(iso); } });
+        }
+
+        const wd = date.toLocaleString("en-CA", { weekday:"short" });
+        if (cat === "OVS" || cat === "OVD") { stats.book++; lists.book.push({ iso, wd, cat, r3: unit + base, b: B[i] }); }
+        if (cat === "FREE") { stats.free++; lists.free.push({ iso, wd, b: B[i], star: isTof }); }
+        if (cat === "BLK") { stats.blk++; lists.blk.push({ iso, wd, from: fmtISO(addDays(date,-1)) }); }
+        if (isTof) stats.tof++;
+        g.appendChild(e);
+      }
+      mEl.appendChild(g);
+      cont.appendChild(mEl);
+    });
+
+    setChip("rpBook", stats.book, animate); setChip("rpFree", stats.free, animate);
+    setChip("rpBlk", stats.blk, animate); setChip("rpAtt", stats.book + stats.free, animate);
+    setChip("rpTof", stats.tof, animate);
+    document.getElementById("rpNBook").textContent = stats.book;
+    document.getElementById("rpNFree").textContent = stats.free;
+    document.getElementById("rpNBlk").textContent = stats.blk;
+
+    fillList("rpListBook", lists.book.map(r =>
+      rowHTML(r.cat === "OVS" ? "#c33" : "#d97a06", r.iso + " " + r.wd, r.r3 + " / B " + r.b)), "Nothing to book off in this range.");
+    fillList("rpListFree", lists.free.map(r =>
+      rowHTML("#2a8c41", r.iso + " " + r.wd + (r.star ? " \u2605" : ""), "B " + r.b)), "No free rideout days in this range.");
+    fillList("rpListBlk", lists.blk.map(r =>
+      rowHTML("#8e4ec6", r.iso + " " + r.wd, "night of " + r.from.slice(5) + " runs into it")), "No blocked days \u2014 every post-night morning is clear.");
+  }
+
+  function toggle(iso) {
+    if (timeOff.has(iso)) timeOff.delete(iso); else timeOff.add(iso);
+    persist();
+    render(true);
+  }
+
+  function buildRanges() {
+    const el = document.getElementById("rpRanges");
+    el.innerHTML = "";
+    PRESETS.forEach(p => {
+      const b = document.createElement("button");
+      b.className = "rp-range" + (range.key === p.key ? " active" : "");
+      b.textContent = p.label;
+      b.addEventListener("click", () => { range = { from:p.from, to:p.to, key:p.key }; buildRanges(); render(false); });
+      el.appendChild(b);
+    });
+    const rs = document.createElement("button");
+    rs.className = "rp-reset"; rs.textContent = "reset to FTCC schedule";
+    rs.title = "Restore the booked-off days from your FTCC schedule (VAC / STA / PERS)";
+    rs.addEventListener("click", () => { timeOff = new Set(SEED_TIME_OFF); persist(); render(true); });
+    el.appendChild(rs);
+  }
+
+  loadSaved();
+  buildRanges();
+  render(false);
+})();
 
 // Initial render
 render();

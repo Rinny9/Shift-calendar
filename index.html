@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Rinaldo's Schedules</title>
+<meta name="description" content="Work schedule and ACP rideout planner for Rinaldo Gjergji">
+<meta name="theme-color" content="#0b0e13">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Schedules">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192x192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192x192.png">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  :root {
+    --bg: #0b0e13;
+    --surface: #13171e;
+    --surface-2: #1a1f28;
+    --surface-hover: #1e2430;
+    --border: #252d3a;
+    --text: #e2e8f0;
+    --text-muted: #6b7a90;
+    --accent: #60a5fa;
+    --accent-dim: rgba(96,165,250,0.12);
+    --day-color: #34d399;
+    --day-bg: rgba(52,211,153,0.10);
+    --day-border: rgba(52,211,153,0.30);
+    --night-color: #c084fc;
+    --night-bg: rgba(192,132,252,0.10);
+    --night-border: rgba(192,132,252,0.30);
+    --today-color: #fb923c;
+    --today-bg: rgba(251,146,60,0.12);
+    --today-border: rgba(251,146,60,0.45);
+    --ftcc-color: #38bdf8;
+    --ftcc-bg: rgba(56,189,248,0.10);
+    --ftcc-border: rgba(56,189,248,0.30);
+    --weekend-bg: rgba(255,255,255,0.02);
+    --radius: 8px;
+    --font: 'DM Sans', system-ui, sans-serif;
+    --font-display: 'Playfair Display', serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(96,165,250,0.06) 0%, transparent 60%),
+      linear-gradient(rgba(96,165,250,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(96,165,250,0.02) 1px, transparent 1px);
+    background-size: 100% 100%, 48px 48px, 48px 48px;
+    pointer-events: none; z-index: 0;
+  }
+
+  .app { position: relative; z-index: 1; max-width: 1440px; margin: 0 auto; padding: 20px 20px 60px; padding-top: max(20px, env(safe-area-inset-top)); padding-bottom: max(60px, env(safe-area-inset-bottom)); }
+
+  /* Header */
+  header { text-align: center; padding: 36px 20px 28px; }
+  header h1 {
+    font-family: var(--font-display); font-size: clamp(1.8rem, 4.5vw, 3rem); font-weight: 800;
+    background: linear-gradient(135deg, #e2e8f0 30%, var(--accent) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    margin-bottom: 4px; letter-spacing: -0.3px;
+  }
+  header .subtitle { color: var(--text-muted); font-size: 0.88rem; }
+  header .name-badge {
+    display: inline-block; margin-top: 10px; padding: 4px 14px;
+    background: var(--accent-dim); border: 1px solid rgba(96,165,250,0.2);
+    border-radius: 20px; font-size: 0.78rem; font-weight: 600; color: var(--accent);
+    letter-spacing: 0.3px;
+  }
+
+  /* Upload */
+  .upload-bar {
+    display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    margin-bottom: 16px; cursor: pointer; transition: border-color 0.2s;
+  }
+  .upload-bar:hover { border-color: var(--accent); }
+  .upload-bar svg { width: 18px; height: 18px; stroke: var(--accent); flex-shrink: 0; }
+  .upload-bar span { font-size: 0.82rem; color: var(--text-muted); }
+  .upload-bar .accent { color: var(--accent); font-weight: 600; }
+  .upload-bar input { display: none; }
+
+  /* Status */
+  .status-msg {
+    padding: 8px 14px; border-radius: 8px; font-size: 0.82rem; margin-bottom: 12px;
+    display: none; align-items: center; gap: 8px;
+  }
+  .status-msg.success { display: flex; background: var(--day-bg); border: 1px solid var(--day-border); color: var(--day-color); }
+  .status-msg.error { display: flex; background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); color: #f87171; }
+  .status-msg.loading { display: flex; background: var(--accent-dim); border: 1px solid rgba(96,165,250,0.2); color: var(--accent); }
+
+  /* Controls */
+  .controls {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    padding: 10px 16px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; margin-bottom: 18px;
+  }
+  .year-nav { display: flex; align-items: center; gap: 6px; }
+  .year-nav button {
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+    border-radius: 6px; padding: 5px 12px; cursor: pointer; font-family: var(--font);
+    font-size: 0.82rem; font-weight: 600; transition: all 0.15s;
+  }
+  .year-nav button:hover { border-color: var(--accent); color: var(--accent); }
+  .year-label { font-family: var(--font-display); font-size: 1.2rem; font-weight: 800; min-width: 56px; text-align: center; }
+
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.75rem; color: var(--text-muted); }
+  .legend-dot { width: 9px; height: 9px; border-radius: 3px; }
+  .legend-dot.day { background: var(--day-color); }
+  .legend-dot.night { background: var(--night-color); }
+  .legend-dot.ftcc { background: var(--ftcc-color); }
+  .legend-dot.today { background: var(--today-color); }
+
+  .stats { font-size: 0.78rem; color: var(--text-muted); display: flex; gap: 12px; flex-wrap: wrap; }
+  .stats strong { color: var(--text); font-weight: 600; }
+
+  /* Calendar */
+  .calendar-year { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+  .month-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px; transition: border-color 0.2s;
+    animation: fadeUp 0.35s ease both;
+  }
+  .month-card:hover { border-color: rgba(96,165,250,0.25); }
+  .month-card:nth-child(1){animation-delay:.01s}.month-card:nth-child(2){animation-delay:.03s}.month-card:nth-child(3){animation-delay:.05s}
+  .month-card:nth-child(4){animation-delay:.07s}.month-card:nth-child(5){animation-delay:.09s}.month-card:nth-child(6){animation-delay:.11s}
+  .month-card:nth-child(7){animation-delay:.13s}.month-card:nth-child(8){animation-delay:.15s}.month-card:nth-child(9){animation-delay:.17s}
+  .month-card:nth-child(10){animation-delay:.19s}.month-card:nth-child(11){animation-delay:.21s}.month-card:nth-child(12){animation-delay:.23s}
+
+  .month-name { font-weight: 700; font-size: 0.92rem; margin-bottom: 8px; color: var(--accent); font-family: var(--font-display); letter-spacing: 0.2px; }
+  .day-headers { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; margin-bottom: 3px; }
+  .day-header { text-align: center; font-size: 0.6rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; padding: 2px 0; }
+  .days-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; }
+
+  .day-cell {
+    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+    font-size: 0.72rem; font-weight: 500; border-radius: 4px; position: relative; cursor: default; transition: transform 0.12s;
+  }
+  .day-cell:not(.empty):hover { transform: scale(1.2); z-index: 5; }
+  .day-cell.weekend { background: var(--weekend-bg); }
+
+  .day-cell.shift-day { background: var(--day-bg); color: var(--day-color); font-weight: 700; box-shadow: inset 0 0 0 1.5px var(--day-border); }
+  .day-cell.shift-night { background: var(--night-bg); color: var(--night-color); font-weight: 700; box-shadow: inset 0 0 0 1.5px var(--night-border); }
+  .day-cell.shift-ftcc-day { background: var(--ftcc-bg); color: var(--ftcc-color); font-weight: 700; box-shadow: inset 0 0 0 1.5px var(--ftcc-border); }
+  .day-cell.shift-ftcc-night { background: var(--ftcc-bg); color: var(--ftcc-color); font-weight: 700; box-shadow: inset 0 0 0 1.5px var(--ftcc-border); }
+  .day-cell.today { background: var(--today-bg) !important; color: var(--today-color) !important; font-weight: 700; box-shadow: inset 0 0 0 2px var(--today-border) !important; }
+
+  /* Shift type dots */
+  .day-cell .shift-dot {
+    position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%);
+    width: 4px; height: 4px; border-radius: 50%;
+  }
+  .day-cell.today.has-shift .shift-dot { display: block; }
+  .shift-dot.dot-day { background: var(--day-color); }
+  .shift-dot.dot-night { background: var(--night-color); }
+  .shift-dot.dot-ftcc { background: var(--ftcc-color); }
+
+  /* Tooltip */
+  .tip {
+    display: none; position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+    background: #1e2430; border: 1px solid var(--border); color: var(--text);
+    padding: 7px 11px; border-radius: 7px; font-size: 0.7rem; white-space: nowrap;
+    z-index: 100; pointer-events: none; box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+    line-height: 1.5;
+  }
+  .tip .tip-label { font-weight: 700; }
+  .tip .tip-unit { color: var(--accent); }
+  .tip .tip-time { color: var(--text-muted); }
+  .tip .tip-note { color: var(--today-color); font-style: italic; }
+  .day-cell:hover .tip { display: block; }
+
+  @keyframes fadeUp { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
+  @media (max-width: 640px) {
+    .controls { flex-direction: column; align-items: flex-start; }
+    .calendar-year { grid-template-columns: 1fr; }
+    .app { padding: 12px 10px 40px; }
+  }
+
+  .hidden { display: none !important; }
+
+  /* ─── Tab Bar ─── */
+  .tab-bar {
+    display: flex; gap: 4px; padding: 4px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    margin-bottom: 18px; max-width: 420px; margin-left: auto; margin-right: auto;
+  }
+  .tab-btn {
+    flex: 1; padding: 10px 16px; border: none; border-radius: 8px;
+    font-family: var(--font); font-size: 0.82rem; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; background: transparent; color: var(--text-muted);
+  }
+  .tab-btn.active { background: var(--accent); color: #0b0e13; }
+  .tab-btn:not(.active):hover { color: var(--text); background: var(--surface-2); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ─── Rideouts (work + precepting) ─── */
+  .rs-wrap { padding: 0 4px; }
+  .rs-header-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: var(--accent); margin-bottom: 4px; }
+  .rs-header-title { font-size: 24px; font-weight: 800; color: var(--text); margin-bottom: 6px; letter-spacing: -0.03em; }
+  .rs-intro { font-size: 12.5px; color: var(--text-muted); line-height: 1.55; margin-bottom: 14px; max-width: 720px; }
+  .rs-intro b { color: var(--text); }
+  .rs-strip { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .rs-chip { display: flex; align-items: baseline; gap: 7px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 7px 12px; }
+  .rs-chip .n { font-weight: 700; font-size: 19px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .rs-chip .l { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; }
+  .rs-chip.jai .n { color: #2dd4bf; }
+  .rs-chip.stg .n { color: #fbbf24; }
+  .rs-chip.hrs .n { color: var(--accent); }
+  .rs-chip.warn .n { color: #f87171; }
+  .rs-chip.pulse .n { animation: rsPop .35s ease; }
+  @keyframes rsPop { 0%{transform:scale(1)} 40%{transform:scale(1.22)} 100%{transform:scale(1)} }
+  .rs-controls { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; margin-bottom: 10px; }
+  .rs-range { font-size: 12px; font-weight: 600; background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border); border-radius: 16px; padding: 6px 13px; cursor: pointer; font-family: var(--font); }
+  .rs-range:hover { color: var(--text); }
+  .rs-range.active { background: var(--accent); color: #0b0e13; border-color: var(--accent); }
+  .rs-reset { font-size: 12px; background: none; color: var(--text-muted); border: 1px dashed var(--border); border-radius: 16px; padding: 6px 13px; cursor: pointer; font-family: var(--font); margin-left: auto; }
+  .rs-reset:hover { color: #ef4444; border-color: #ef4444; }
+  .rs-legend { display: flex; flex-wrap: wrap; gap: 5px 14px; font-size: 11.5px; color: var(--text-muted); margin-bottom: 4px; }
+  .rs-legend span { display: flex; align-items: center; gap: 5px; }
+  .rs-sw { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+  .rs-hint { font-size: 11.5px; color: var(--text-muted); margin-bottom: 14px; }
+  .rs-hint b { color: var(--accent); }
+  .rs-months { display: grid; gap: 18px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); margin-bottom: 20px; }
+  .rs-month { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
+  .rs-month h3 { font-family: var(--font-display); font-size: 18px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+  .rs-month h3 small { font-family: var(--font); font-size: 11px; color: var(--text-muted); font-weight: 400; margin-left: 6px; }
+  .rs-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .rs-dow { font-size: 9.5px; color: var(--text-muted); text-align: center; padding-bottom: 3px; text-transform: uppercase; font-weight: 600; }
+  .rs-day { position: relative; border-radius: 6px; min-height: 58px; padding: 3px 3px 4px; font-size: 10.5px; display: flex; flex-direction: column; gap: 2px; background: var(--surface-2); color: var(--text-muted); cursor: pointer; user-select: none; border: 1px solid transparent; transition: filter .12s, transform .12s; }
+  .rs-day:hover { filter: brightness(1.18); transform: translateY(-1px); }
+  .rs-day .num { font-weight: 700; font-size: 11px; line-height: 1.2; color: var(--text-muted); padding: 1px 2px 0; }
+  .rs-day.has-any .num { color: var(--text); }
+  .rs-pill { border-radius: 4px; font-size: 8.5px; font-weight: 700; padding: 2px 3px; line-height: 1.15; text-align: center; letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; }
+  .rs-pill.work { background: #2563eb; color: #fff; }
+  .rs-pill.work.offd { background: var(--surface); color: var(--text-muted); text-decoration: line-through; border: 1px dashed var(--border); }
+  .rs-pill.jai { background: #0d9488; color: #fff; }
+  .rs-pill.stg { background: #b45309; color: #fff; }
+  .rs-day.warn { border-color: #ef4444; box-shadow: inset 0 0 0 1px #ef4444; }
+  .rs-day .wicon { position: absolute; top: 1px; right: 3px; font-size: 9px; }
+  .rs-day.outside { visibility: hidden; }
+  .rs-lists { display: grid; gap: 12px; margin-bottom: 16px; }
+  .rs-lists details { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .rs-lists summary { cursor: pointer; padding: 12px 16px; font-weight: 700; font-size: 14px; list-style: none; display: flex; align-items: center; gap: 9px; }
+  .rs-lists summary::-webkit-details-marker { display: none; }
+  .rs-cnt { font-size: 11px; font-weight: 700; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 2px 9px; color: var(--text-muted); }
+  .rs-arrow { margin-left: auto; color: var(--text-muted); transition: transform .15s; }
+  .rs-lists details[open] .rs-arrow { transform: rotate(90deg); }
+  .rs-rows { padding: 2px 16px 14px; display: grid; gap: 5px; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+  .rs-row { font-size: 11.5px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 7px; padding: 6px 10px; display: flex; gap: 8px; align-items: center; font-variant-numeric: tabular-nums; }
+  .rs-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .rs-row .why { color: var(--text-muted); font-size: 10px; margin-left: auto; text-align: right; }
+  .rs-row.full { grid-column: 1 / -1; }
+  .rs-empty { color: var(--text-muted); font-size: 12.5px; padding: 0 16px 14px; font-style: italic; }
+  .rs-foot { font-size: 10.5px; color: var(--text-muted); line-height: 1.6; }
+  /* editor sheet */
+  .rs-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 90; display: none; }
+  .rs-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 91; background: var(--surface); border-top: 1px solid var(--border); border-radius: 16px 16px 0 0; padding: 16px 18px calc(18px + env(safe-area-inset-bottom)); display: none; max-height: 80vh; overflow-y: auto; }
+  .rs-backdrop.open, .rs-sheet.open { display: block; }
+  .rs-sheet h4 { font-size: 16px; font-weight: 800; margin-bottom: 2px; color: var(--text); }
+  .rs-sheet .sub { font-size: 11.5px; color: var(--text-muted); margin-bottom: 12px; }
+  .rs-sheet .sec { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin: 12px 0 6px; }
+  .rs-opts { display: flex; flex-wrap: wrap; gap: 6px; }
+  .rs-opt { font-size: 12px; font-weight: 600; background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; cursor: pointer; font-family: var(--font); }
+  .rs-opt.sel-none.active { background: var(--text-muted); color: #0b0e13; border-color: var(--text-muted); }
+  .rs-opt.sel-jai.active { background: #0d9488; color: #fff; border-color: #0d9488; }
+  .rs-opt.sel-stg.active { background: #b45309; color: #fff; border-color: #b45309; }
+  .rs-opt.sel-work.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+  .rs-sheet .warnbox { background: rgba(239,68,68,.1); border: 1px solid #ef4444; color: #fca5a5; border-radius: 8px; padding: 8px 10px; font-size: 11.5px; margin-top: 12px; line-height: 1.5; }
+  .rs-done { width: 100%; margin-top: 14px; font-size: 14px; font-weight: 700; background: var(--accent); color: #0b0e13; border: none; border-radius: 10px; padding: 12px; cursor: pointer; font-family: var(--font); }
+
+  @media (max-width: 600px) {
+    .rs-day { min-height: 54px; }
+    .rs-pill { font-size: 8px; }
+    .rs-chip .n { font-size: 16px; }
+  }
+  .rs-printbtn { font-size: 12px; font-weight: 600; background: var(--surface-2); color: var(--text); border: 1px solid var(--border); border-radius: 16px; padding: 7px 14px; cursor: pointer; font-family: var(--font); margin-bottom: 12px; }
+  .rs-printbtn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ─── Portrait print: clean one-month-per-page calendar ─── */
+  @media print {
+    @page { size: letter portrait; margin: 1cm; }
+    html, body { background: #fff !important; }
+    header, .tab-bar, #tab-work,
+    #tab-rideout .rs-strip, #tab-rideout .rs-controls, #tab-rideout .rs-hint,
+    #tab-rideout .rs-lists, #tab-rideout .rs-foot, #tab-rideout .rs-header-label,
+    #tab-rideout .rs-intro, #rsBackdrop, #rsSheet, .rs-printbtn { display: none !important; }
+    #tab-rideout { display: block !important; }
+    #tab-rideout .rs-header-title { display: block !important; color: #0f172a !important; font-size: 17px; margin-bottom: 6px; }
+    #tab-rideout .rs-legend { color: #0f172a !important; margin-bottom: 10px; gap: 4px 14px; }
+    #tab-rideout .rs-legend span { color: #0f172a !important; }
+    .rs-months { display: block !important; }
+    .rs-month { page-break-after: always; break-inside: avoid; background: #fff !important; border: none !important; padding: 0 !important; margin: 0 !important; }
+    .rs-month:last-of-type { page-break-after: avoid; }
+    .rs-month h3 { color: #0f172a !important; font-size: 16px; }
+    .rs-grid { gap: 2px !important; }
+    .rs-dow { color: #475569 !important; }
+    .rs-day { background: #f8fafc !important; min-height: 92px !important; border: 0.5px solid #cbd5e1 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .rs-day .num { color: #0f172a !important; }
+    .rs-pill { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 10px !important; padding: 3px !important; white-space: normal !important; }
+    .rs-pill.work.offd { background: #eef2f7 !important; color: #64748b !important; }
+    .rs-day.warn { box-shadow: inset 0 0 0 2px #dc2626 !important; border-color: #dc2626 !important; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Shift Calendar</h1>
+    <p class="subtitle">Rinaldo Gjergji</p>
+  </header>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('work')">Work Schedule</button>
+    <button class="tab-btn" onclick="switchTab('rideout')">Rideouts</button>
+  </div>
+
+  <!-- ═══ WORK SCHEDULE TAB ═══ -->
+  <div class="tab-content active" id="tab-work">
+  <div style="text-align:center;margin-bottom:12px;">
+    <span style="display:inline-block;padding:3px 12px;background:var(--accent-dim);border:1px solid rgba(96,165,250,0.2);border-radius:16px;font-size:0.75rem;font-weight:600;color:var(--accent);letter-spacing:0.3px;">PEEL REGIONAL PARAMEDIC SERVICES</span>
+  </div>
+
+  <div class="upload-bar" id="uploadBar">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+    <span>Upload a new schedule — <span class="accent">CSV, TXT, or PDF</span></span>
+    <input type="file" id="fileInput" accept=".csv,.txt,.tsv,.pdf">
+  </div>
+
+  <div class="status-msg" id="statusMsg"></div>
+
+  <div class="controls" id="controls">
+    <div class="year-nav">
+      <button id="prevYear">&#8592;</button>
+      <span class="year-label" id="yearLabel"></span>
+      <button id="nextYear">&#8594;</button>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot day"></div>Day</div>
+      <div class="legend-item"><div class="legend-dot night"></div>Night</div>
+      <div class="legend-item"><div class="legend-dot ftcc"></div>FTCC</div>
+      <div class="legend-item"><div class="legend-dot today"></div>Today</div>
+    </div>
+    <div class="stats" id="stats"></div>
+  </div>
+
+  <div id="calendarContainer"></div>
+  </div><!-- end tab-work -->
+
+  <!-- ═══ RIDEOUTS TAB ═══ -->
+  <div class="tab-content" id="tab-rideout">
+    <div class="rs-wrap">
+      <div class="rs-header-label">ACP Preceptorship — 2026</div>
+      <div class="rs-header-title">Work + Rideouts</div>
+      <p class="rs-intro">Your shifts and confirmed rideouts on one calendar. Cells show shift <b>start times</b>; rideouts read <b>RH</b> (Rising Hill / Jairo) or <b>SV</b> (Streetsville / Stiggy) plus start time. <b>Tap any day</b> to add, change, or remove a shift. Use <b>Print / Save as PDF</b> for a portrait printout. Red borders flag conflicts.</p>
+
+      <div class="rs-strip">
+        <div class="rs-chip jai"><span class="n" id="rsJai">–</span><span class="l">Jairo · Rising Hill</span></div>
+        <div class="rs-chip stg"><span class="n" id="rsStg">–</span><span class="l">Stiggy · Streetsville</span></div>
+        <div class="rs-chip hrs"><span class="n" id="rsHrs">–</span><span class="l">rideout hours</span></div>
+        <div class="rs-chip warn"><span class="n" id="rsWarn">–</span><span class="l">conflicts</span></div>
+      </div>
+
+      <div class="rs-controls" id="rsRanges"></div>
+      <button class="rs-printbtn" onclick="window.print()">⎙ Print / Save as PDF</button>
+
+      <div class="rs-legend">
+        <span><span class="rs-sw" style="background:#2563eb"></span>Work — start time</span>
+        <span><span class="rs-sw" style="background:#0d9488"></span>RH — Rising Hill (Jairo)</span>
+        <span><span class="rs-sw" style="background:#b45309"></span>SV — Streetsville (Stiggy)</span>
+        <span><span class="rs-sw" style="background:var(--surface);border:1px dashed var(--border)"></span>Booked-off work</span>
+        <span><span class="rs-sw" style="background:none;border:2px solid #ef4444"></span>Conflict</span>
+      </div>
+      <div class="rs-hint"><b>D</b> = day (06:00–18:00) · <b>N</b> = night (18:00–06:00). Changes save on this device automatically.</div>
+
+      <div class="rs-months" id="rsMonths"></div>
+
+      <div class="rs-lists">
+        <details open>
+          <summary><span class="rs-dot" style="background:#0d9488"></span>Rideout shifts <span class="rs-cnt" id="rsNRide">0</span><span class="rs-arrow">›</span></summary>
+          <div class="rs-rows" id="rsListRide"></div>
+        </details>
+        <details open>
+          <summary><span class="rs-dot" style="background:#ef4444"></span>Conflicts &amp; cautions <span class="rs-cnt" id="rsNWarn">0</span><span class="rs-arrow">›</span></summary>
+          <div class="rs-rows" id="rsListWarn"></div>
+        </details>
+        <details>
+          <summary><span class="rs-dot" style="background:#64748b"></span>Booked-off work days <span class="rs-cnt" id="rsNOff">0</span><span class="rs-arrow">›</span></summary>
+          <div class="rs-rows" id="rsListOff"></div>
+        </details>
+      </div>
+
+      <div class="rs-foot" id="rsSave">Work schedule: 2026 Master (R3) + FTCC trades &amp; book-offs. Rideouts: confirmed shifts with Jairo (Rising Hill) and Stiggy (Streetsville). 12 h per rideout shift.</div>
+    </div>
+
+    <div class="rs-backdrop" id="rsBackdrop"></div>
+    <div class="rs-sheet" id="rsSheet">
+      <h4 id="rsSheetTitle">—</h4>
+      <div class="sub" id="rsSheetSub">—</div>
+      <div class="sec">Rideout</div>
+      <div class="rs-opts" id="rsSheetRide"></div>
+      <div id="rsSheetWorkWrap">
+        <div class="sec">Work shift</div>
+        <div class="rs-opts" id="rsSheetWork"></div>
+      </div>
+      <div class="warnbox" id="rsSheetWarn" style="display:none"></div>
+      <button class="rs-done" id="rsSheetDone">Done</button>
+    </div>
+  </div><!-- end tab-rideout -->
+</div>
+
+<script>
+// ─── Constants ───
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAYS_H = ['Mo','Tu','We','Th','Fr','Sa','Su'];
+
+// ─── Pre-loaded schedule from Peel Regional PDF ───
+const scheduleData = {};
+
+function addShift(dateStr, unit, start, end, notes) {
+  let shiftType = 'day';
+  const startH = parseInt(start.split(':')[0]);
+  if (startH >= 17 || startH < 5) shiftType = 'night';
+  const isFTCC = unit.toUpperCase().includes('FTCC');
+  if (isFTCC) shiftType = shiftType === 'night' ? 'ftcc-night' : 'ftcc-day';
+  scheduleData[dateStr] = { shift: shiftType, unit, start, end, notes: notes || '' };
+}
+
+// ── January 2026 ──
+addShift('2026-01-01','SV-1','07:30','19:30','');
+addShift('2026-01-02','SV-2','19:30','07:30','');
+addShift('2026-01-03','SV-2','19:30','07:30','');
+addShift('2026-01-05','SV-1','19:30','07:30','');
+addShift('2026-01-07','TK-2','19:30','07:30','PBK');
+addShift('2026-01-10','SV-1','07:30','19:30','');
+addShift('2026-01-11','SV-1','07:30','19:30','');
+addShift('2026-01-12','SV-1','19:30','07:30','STA Dec 25');
+addShift('2026-01-13','SV-1','19:30','07:30','STA Dec.26');
+addShift('2026-01-14','TK-2','19:30','07:30','PBK');
+addShift('2026-01-15','TK-2','19:30','07:30','PBK');
+addShift('2026-01-18','SV-1','07:30','19:30','');
+addShift('2026-01-19','SV-1','07:30','19:30','S/C R. Seguro');
+addShift('2026-01-20','SV-1','19:30','07:30','VAC');
+addShift('2026-01-21','SV-1','19:30','07:30','');
+addShift('2026-01-22','SV-1','19:00','07:00','PBK');
+addShift('2026-01-26','SV-1','07:30','19:30','S/C riar unpd');
+addShift('2026-01-27','SV-1','07:30','19:30','S/C rocchi unpd');
+addShift('2026-01-28','SV-1','19:30','07:30','');
+addShift('2026-01-29','SV-1','19:30','07:30','');
+addShift('2026-01-31','TK-2','07:00','19:00','PBK');
+
+// ── February 2026 ──
+addShift('2026-02-03','SV-1','07:30','19:30','S/C D. Rocchi');
+addShift('2026-02-04','SV-3','06:00','18:00','');
+addShift('2026-02-05','SV-3','18:00','06:00','');
+addShift('2026-02-06','SV-1','19:30','07:30','VAC');
+addShift('2026-02-08','TK-2','07:00','19:00','PBK');
+addShift('2026-02-11','SV-3','06:00','18:00','');
+addShift('2026-02-12','SV-3','06:00','18:00','');
+addShift('2026-02-13','SV-3','18:00','06:00','');
+addShift('2026-02-14','SV-1','19:30','07:30','VAC');
+addShift('2026-02-19','SV-3','06:00','18:00','');
+addShift('2026-02-20','SV-3','06:00','18:00','');
+addShift('2026-02-21','SV-3','18:00','06:00','');
+addShift('2026-02-22','SV-3','18:00','06:00','STA');
+addShift('2026-02-27','SV-1','07:30','19:30','S/C p.singh unpd');
+addShift('2026-02-28','SV-3','06:00','18:00','');
+
+// ── March 2026 ──
+addShift('2026-03-01','SV-3','18:00','06:00','');
+addShift('2026-03-02','SV-3','18:00','06:00','');
+addShift('2026-03-07','SV-3','06:00','18:00','');
+addShift('2026-03-08','SV-3','06:00','18:00','');
+addShift('2026-03-09','SV-1','19:30','07:30','S/C cameron unpd');
+addShift('2026-03-10','SV-3','18:00','06:00','VAC');
+addShift('2026-03-14','SV-2','05:30','17:30','PBK');
+addShift('2026-03-15','SV-3','06:00','18:00','');
+addShift('2026-03-16','SV-1','07:30','19:30','S/C D. Rocchi');
+addShift('2026-03-17','SV-1','19:30','07:30','S/C cameron unpd');
+addShift('2026-03-18','SV-3','18:00','06:00','');
+addShift('2026-03-23','SV-3','06:00','18:00','STA');
+addShift('2026-03-24','SV-1','07:30','19:30','S/C cameron unpd');
+addShift('2026-03-25','SV-3','18:00','06:00','');
+addShift('2026-03-26','SV-3','18:00','06:00','');
+addShift('2026-03-27','TK-2','19:30','07:30','PBK');
+addShift('2026-03-31','SV-1','07:30','19:30','S/C d\'silva unpd');
+
+// ── April 2026 ──
+addShift('2026-04-01','SV-3','06:00','18:00','');
+addShift('2026-04-02','SV-3','18:00','06:00','');
+addShift('2026-04-03','SV-3','18:00','06:00','');
+addShift('2026-04-05','TK-2','07:00','19:00','PBK');
+addShift('2026-04-08','SV-3','06:00','18:00','');
+addShift('2026-04-09','SV-3','06:00','18:00','');
+addShift('2026-04-10','SV-3','18:00','06:00','');
+addShift('2026-04-11','SV-3','18:00','06:00','');
+addShift('2026-04-16','SV-3','06:00','18:00','');
+addShift('2026-04-17','SV-3','06:00','18:00','');
+addShift('2026-04-18','SV-3','18:00','06:00','');
+addShift('2026-04-19','SV-3','18:00','06:00','');
+addShift('2026-04-24','SV-3','06:00','18:00','');
+addShift('2026-04-25','SV-3','06:00','18:00','');
+addShift('2026-04-26','SV-3','18:00','06:00','');
+addShift('2026-04-27','SV-3','18:00','06:00','');
+
+// ── May 2026 ──
+addShift('2026-05-02','SV-3','06:00','18:00','');
+addShift('2026-05-03','SV-3','06:00','18:00','');
+addShift('2026-05-04','SV-3','18:00','06:00','');
+addShift('2026-05-05','SV-3','18:00','06:00','');
+addShift('2026-05-10','SV-3','06:00','18:00','');
+addShift('2026-05-11','SV-3','06:00','18:00','');
+addShift('2026-05-12','SV-3','18:00','06:00','');
+addShift('2026-05-13','SV-3','18:00','06:00','');
+addShift('2026-05-18','SV-3','06:00','18:00','');
+addShift('2026-05-19','SV-3','06:00','18:00','');
+addShift('2026-05-20','SV-3','18:00','06:00','');
+addShift('2026-05-21','SV-3','18:00','06:00','');
+addShift('2026-05-26','SV-3','06:00','18:00','');
+addShift('2026-05-27','SV-3','06:00','18:00','');
+addShift('2026-05-28','SV-3','18:00','06:00','');
+addShift('2026-05-29','SV-3','18:00','06:00','');
+
+// ── June 2026 ──
+addShift('2026-06-03','SV-3','06:00','18:00','');
+addShift('2026-06-04','SV-3','06:00','18:00','');
+addShift('2026-06-05','SV-3','18:00','06:00','');
+addShift('2026-06-06','SV-3','18:00','06:00','');
+addShift('2026-06-11','SV-3','06:00','18:00','');
+addShift('2026-06-12','SV-3','06:00','18:00','');
+addShift('2026-06-13','SV-3','18:00','06:00','');
+addShift('2026-06-14','SV-3','18:00','06:00','');
+addShift('2026-06-19','SV-3','06:00','18:00','');
+addShift('2026-06-20','SV-3','06:00','18:00','');
+addShift('2026-06-21','SV-3','18:00','06:00','');
+addShift('2026-06-22','SV-3','18:00','06:00','');
+addShift('2026-06-27','SV-3','06:00','18:00','');
+addShift('2026-06-28','SV-3','06:00','18:00','');
+addShift('2026-06-29','SV-3','18:00','06:00','');
+addShift('2026-06-30','SV-3','18:00','06:00','');
+
+// ── July 2026 ──
+addShift('2026-07-05','SV-3','06:00','18:00','');
+addShift('2026-07-06','SV-3','06:00','18:00','');
+addShift('2026-07-07','SV-3','18:00','06:00','');
+addShift('2026-07-08','SV-3','18:00','06:00','');
+addShift('2026-07-13','SV-3','06:00','18:00','');
+addShift('2026-07-14','SV-3','06:00','18:00','');
+addShift('2026-07-15','SV-3','18:00','06:00','');
+addShift('2026-07-16','SV-3','18:00','06:00','');
+addShift('2026-07-21','SV-3','06:00','18:00','');
+addShift('2026-07-22','SV-3','06:00','18:00','');
+addShift('2026-07-23','SV-3','18:00','06:00','');
+addShift('2026-07-24','SV-3','18:00','06:00','');
+addShift('2026-07-29','SV-3','06:00','18:00','');
+addShift('2026-07-30','SV-3','06:00','18:00','');
+addShift('2026-07-31','SV-3','18:00','06:00','');
+
+// ── August 2026 ──
+addShift('2026-08-01','SV-3','18:00','06:00','');
+addShift('2026-08-06','SV-3','06:00','18:00','');
+addShift('2026-08-07','SV-3','06:00','18:00','');
+addShift('2026-08-08','SV-3','18:00','06:00','');
+addShift('2026-08-09','SV-3','18:00','06:00','');
+addShift('2026-08-14','SV-3','06:00','18:00','');
+addShift('2026-08-15','SV-3','06:00','18:00','');
+addShift('2026-08-16','SV-3','18:00','06:00','');
+addShift('2026-08-17','SV-3','18:00','06:00','');
+addShift('2026-08-22','SV-3','06:00','18:00','');
+addShift('2026-08-23','SV-3','06:00','18:00','');
+addShift('2026-08-24','SV-3','18:00','06:00','');
+addShift('2026-08-25','SV-3','18:00','06:00','');
+addShift('2026-08-30','SV-3','06:00','18:00','');
+addShift('2026-08-31','SV-3','06:00','18:00','');
+
+// ── September 2026 ──
+addShift('2026-09-01','SV-3','18:00','06:00','');
+addShift('2026-09-02','SV-3','18:00','06:00','');
+addShift('2026-09-07','SV-3','06:00','18:00','');
+addShift('2026-09-08','SV-3','06:00','18:00','');
+addShift('2026-09-09','SV-3','18:00','06:00','');
+addShift('2026-09-10','SV-3','18:00','06:00','');
+addShift('2026-09-15','SV-3','06:00','18:00','');
+addShift('2026-09-16','SV-3','06:00','18:00','');
+addShift('2026-09-17','SV-3','18:00','06:00','');
+addShift('2026-09-18','SV-3','18:00','06:00','');
+addShift('2026-09-23','SV-3','06:00','18:00','');
+addShift('2026-09-24','SV-3','06:00','18:00','');
+addShift('2026-09-25','SV-3','18:00','06:00','');
+addShift('2026-09-26','SV-3','18:00','06:00','');
+
+// ── October 2026 ──
+addShift('2026-10-01','SV-3','06:00','18:00','');
+addShift('2026-10-02','SV-3','06:00','18:00','');
+addShift('2026-10-03','SV-3','18:00','06:00','');
+addShift('2026-10-04','SV-3','18:00','06:00','');
+addShift('2026-10-09','SV-3','06:00','18:00','');
+addShift('2026-10-10','SV-3','06:00','18:00','');
+addShift('2026-10-11','SV-3','18:00','06:00','');
+addShift('2026-10-12','SV-3','18:00','06:00','');
+addShift('2026-10-17','SV-3','06:00','18:00','');
+addShift('2026-10-18','SV-3','06:00','18:00','');
+addShift('2026-10-19','SV-3','18:00','06:00','');
+addShift('2026-10-20','SV-3','18:00','06:00','');
+addShift('2026-10-25','SV-3','06:00','18:00','');
+addShift('2026-10-26','SV-3','06:00','18:00','');
+addShift('2026-10-27','SV-3','18:00','06:00','');
+addShift('2026-10-28','SV-3','18:00','06:00','');
+
+// ── November 2026 ──
+addShift('2026-11-02','SV-3','06:00','18:00','');
+addShift('2026-11-03','SV-3','06:00','18:00','');
+addShift('2026-11-04','SV-3','18:00','06:00','');
+addShift('2026-11-05','SV-3','18:00','06:00','');
+addShift('2026-11-10','SV-3','06:00','18:00','');
+addShift('2026-11-11','SV-3','06:00','18:00','');
+addShift('2026-11-12','SV-3','18:00','06:00','');
+addShift('2026-11-13','SV-3','18:00','06:00','');
+addShift('2026-11-18','SV-3','06:00','18:00','');
+addShift('2026-11-19','SV-3','06:00','18:00','');
+addShift('2026-11-20','SV-3','18:00','06:00','');
+addShift('2026-11-21','SV-3','18:00','06:00','');
+addShift('2026-11-26','SV-3','06:00','18:00','');
+addShift('2026-11-27','SV-3','06:00','18:00','');
+addShift('2026-11-28','SV-3','18:00','06:00','');
+addShift('2026-11-29','SV-3','18:00','06:00','');
+
+// ── December 2026 ──
+addShift('2026-12-04','SV-3','06:00','18:00','');
+addShift('2026-12-05','SV-3','06:00','18:00','');
+addShift('2026-12-06','SV-3','18:00','06:00','');
+addShift('2026-12-07','SV-3','18:00','06:00','');
+addShift('2026-12-12','SV-3','06:00','18:00','');
+addShift('2026-12-13','SV-3','06:00','18:00','');
+addShift('2026-12-14','SV-3','18:00','06:00','');
+addShift('2026-12-15','SV-3','18:00','06:00','');
+addShift('2026-12-20','SV-3','06:00','18:00','');
+addShift('2026-12-21','SV-3','06:00','18:00','');
+addShift('2026-12-22','SV-3','18:00','06:00','');
+addShift('2026-12-23','SV-3','18:00','06:00','');
+addShift('2026-12-28','SV-3','06:00','18:00','');
+addShift('2026-12-29','SV-3','06:00','18:00','');
+addShift('2026-12-30','SV-3','18:00','06:00','');
+addShift('2026-12-31','SV-3','18:00','06:00','');
+
+// ─── State ───
+let currentYear = 2026;
+
+// ─── DOM ───
+const uploadBar = document.getElementById('uploadBar');
+const fileInput = document.getElementById('fileInput');
+const statusMsg = document.getElementById('statusMsg');
+const yearLabel = document.getElementById('yearLabel');
+const statsEl = document.getElementById('stats');
+const calendarContainer = document.getElementById('calendarContainer');
+
+uploadBar.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => { if (e.target.files.length) handleFile(e.target.files[0]); });
+document.getElementById('prevYear').addEventListener('click', () => { currentYear--; render(); });
+document.getElementById('nextYear').addEventListener('click', () => { currentYear++; render(); });
+
+function showStatus(msg, type) {
+  statusMsg.className = 'status-msg ' + type;
+  statusMsg.textContent = msg;
+  if (type === 'success' || type === 'error') setTimeout(() => { statusMsg.className = 'status-msg'; }, 5000);
+}
+
+async function handleFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'pdf') {
+    showStatus('Parsing PDF schedule...', 'loading');
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let fullText = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        fullText += content.items.map(item => item.str).join(' ') + '\n';
+      }
+      const count = parsePeelPDF(fullText);
+      showStatus(`Loaded ${count} shifts from ${file.name}`, 'success');
+      render();
+    } catch (err) {
+      showStatus('Error reading PDF: ' + err.message, 'error');
+    }
+  } else {
+    const text = await file.text();
+    const count = parseCSV(text);
+    showStatus(`Loaded ${count} shifts from ${file.name}`, 'success');
+    render();
+  }
+  fileInput.value = '';
+}
+
+// ─── Peel Regional PDF parser ───
+function parsePeelPDF(text) {
+  let count = 0;
+  // Find month/year headers
+  const monthMap = {};
+  MONTHS.forEach((m, i) => { monthMap[m.toLowerCase()] = i; });
+
+  const sections = text.split(/(?=January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}/i);
+
+  for (const section of sections) {
+    const headerMatch = section.match(/(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})/i);
+    if (!headerMatch) continue;
+    const monthIdx = monthMap[headerMatch[1].toLowerCase()];
+    const year = parseInt(headerMatch[2]);
+
+    // Match patterns like: DD SV-1 0730 07:30 - 19:30 or DD FTCC Day Shift 06:00 - 18:00
+    const shiftPattern = /\b(\d{1,2})\s+(SV-\d|TK-\d|FTCC)[^\d]*?(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/gi;
+    let match;
+    while ((match = shiftPattern.exec(section)) !== null) {
+      const day = parseInt(match[1]);
+      if (day < 1 || day > 31) continue;
+      const unit = match[2].toUpperCase();
+      const start = match[3];
+      const end = match[4];
+      const dateStr = `${year}-${String(monthIdx + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+      // Extract notes nearby
+      let notes = '';
+      const afterMatch = section.substring(match.index + match[0].length, match.index + match[0].length + 40);
+      const noteMatch = afterMatch.match(/(VAC|STA|PBK|pbk|S\/C[^0-9]*?)(?=\d|\s{3}|$)/i);
+      if (noteMatch) notes = noteMatch[1].trim();
+
+      addShift(dateStr, unit, start, end, notes);
+      count++;
+    }
+  }
+  return count;
+}
+
+// ─── CSV parser ───
+function parseCSV(text) {
+  let count = 0;
+  const lines = text.trim().split(/\r?\n/);
+  const delim = lines[0].includes('\t') ? '\t' : ',';
+  const rows = lines.map(l => l.split(delim).map(c => c.trim().replace(/^"|"$/g, '')));
+  const hdr = rows[0].map(c => c.toLowerCase());
+  let dateCol = hdr.findIndex(c => /date|day/.test(c));
+  let shiftCol = hdr.findIndex(c => /shift|type|unit/.test(c));
+  let startCol = hdr.findIndex(c => /start|begin/.test(c));
+  let endCol = hdr.findIndex(c => /end|finish/.test(c));
+  let notesCol = hdr.findIndex(c => /note|comment/.test(c));
+  if (dateCol < 0) dateCol = 0;
+
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r[dateCol]) continue;
+    const d = parseDate(r[dateCol]);
+    if (!d) continue;
+    const unit = shiftCol >= 0 ? r[shiftCol] || '' : '';
+    const start = startCol >= 0 ? r[startCol] || '07:00' : '07:00';
+    const end = endCol >= 0 ? r[endCol] || '19:00' : '19:00';
+    const notes = notesCol >= 0 ? r[notesCol] || '' : '';
+    addShift(d, unit, start, end, notes);
+    count++;
+  }
+  return count;
+}
+
+function parseDate(raw) {
+  raw = raw.trim().replace(/['"]/g, '');
+  let m = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (m) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+  m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) return `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
+  return null;
+}
+
+// ─── Render ───
+function render() {
+  yearLabel.textContent = currentYear;
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+
+  let dayC = 0, nightC = 0, ftccC = 0, totalHrs = 0;
+  Object.entries(scheduleData).forEach(([d, v]) => {
+    if (!d.startsWith(String(currentYear))) return;
+    if (v.shift.includes('ftcc')) ftccC++;
+    else if (v.shift === 'night') nightC++;
+    else dayC++;
+    // Calculate hours
+    const [sh, sm] = v.start.split(':').map(Number);
+    const [eh, em] = v.end.split(':').map(Number);
+    let hrs = eh - sh + (em - sm) / 60;
+    if (hrs <= 0) hrs += 24;
+    totalHrs += hrs;
+  });
+
+  statsEl.innerHTML = `
+    <span><strong>${dayC + nightC + ftccC}</strong> shifts</span>
+    <span><strong>${dayC}</strong> day</span>
+    <span><strong>${nightC}</strong> night</span>
+    <span><strong>${ftccC}</strong> FTCC</span>
+    <span><strong>${Math.round(totalHrs)}</strong> hrs</span>
+  `;
+
+  let html = '<div class="calendar-year">';
+  for (let month = 0; month < 12; month++) {
+    html += `<div class="month-card"><div class="month-name">${MONTHS[month]}</div>`;
+    html += '<div class="day-headers">';
+    DAYS_H.forEach(d => html += `<div class="day-header">${d}</div>`);
+    html += '</div><div class="days-grid">';
+
+    // Monday-start: getDay() returns 0=Sun, we want 0=Mon
+    let firstDay = new Date(currentYear, month, 1).getDay();
+    firstDay = firstDay === 0 ? 6 : firstDay - 1; // Convert to Mon=0
+    const daysInMonth = new Date(currentYear, month + 1, 0).getDate();
+
+    for (let i = 0; i < firstDay; i++) html += '<div class="day-cell empty"></div>';
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${currentYear}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const dow = new Date(currentYear, month, day).getDay();
+      const isWeekend = dow === 0 || dow === 6;
+      const isToday = dateStr === todayStr;
+      const entry = scheduleData[dateStr];
+
+      let cls = 'day-cell';
+      if (isWeekend) cls += ' weekend';
+      if (entry) {
+        if (entry.shift === 'ftcc-day' || entry.shift === 'ftcc-night') cls += ` shift-${entry.shift}`;
+        else cls += entry.shift === 'night' ? ' shift-night' : ' shift-day';
+      }
+      if (isToday) cls += ' today' + (entry ? ' has-shift' : '');
+
+      let tip = '';
+      if (entry || isToday) {
+        const dateObj = new Date(currentYear, month, day);
+        const dateFmt = dateObj.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
+        let lines = `<span class="tip-label">${dateFmt}</span>`;
+        if (isToday) lines += ' · <span style="color:var(--today-color)">Today</span>';
+        if (entry) {
+          const shiftLabel = entry.shift.includes('ftcc')
+            ? (entry.shift === 'ftcc-night' ? 'FTCC Night' : 'FTCC Day')
+            : (entry.shift === 'night' ? 'Night' : 'Day');
+          lines += `<br><span class="tip-unit">${entry.unit}</span> · <span class="tip-time">${entry.start} – ${entry.end}</span> · ${shiftLabel}`;
+          if (entry.notes) lines += `<br><span class="tip-note">${entry.notes}</span>`;
+        }
+        tip = `<span class="tip">${lines}</span>`;
+      }
+
+      // Dot indicator for today with a shift
+      let dot = '';
+      if (isToday && entry) {
+        const dotType = entry.shift.includes('ftcc') ? 'ftcc' : entry.shift;
+        dot = `<span class="shift-dot dot-${dotType}"></span>`;
+      }
+
+      html += `<div class="${cls}">${day}${dot}${tip}</div>`;
+    }
+
+    html += '</div></div>';
+  }
+  html += '</div>';
+  calendarContainer.innerHTML = html;
+}
+
+// ─── Tab Switching ───
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.querySelector(`.tab-btn[onclick="switchTab('${tab}')"]`).classList.add('active');
+}
+
+// ─── Rideouts: work + precepting schedule ───
+(function () {
+  // Work base: 2026 Master rotation, R3 line (Dec 22 2025 – Jan 17 2027)
+  const START = new Date(2025, 11, 22);
+  const R3 = "...DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN....DDNN.";
+  const N_DAYS = R3.length;
+  // Trades / shift changes from the FTCC schedule
+  const OVR = {
+    "2026-05-22": ["N", "SV-2"], "2026-06-15": ["N", "TK-1"], "2026-06-16": ["N", "TK-1"],
+    "2026-07-03": ["D", "SV-2"], "2026-07-04": ["D", "SV-2"], "2026-07-11": ["D", "SV-3"]
+  };
+  const FTCC_FROM = "2026-08-06";
+  // Booked-off work (VAC / STA / PERS per FTCC schedule)
+  const BOOKED_SEED = ["2026-05-05","2026-07-13","2026-07-16","2026-07-21","2026-07-22","2026-07-23",
+    "2026-07-29","2026-07-30","2026-08-14","2026-08-16","2026-08-17","2026-08-25"];
+  // Shift START times (24 h). Regular shifts default 0600 (day) / 1800 (night); trades carry their own.
+  const START_OVR = { "2026-05-22":"1830","2026-06-15":"1900","2026-06-16":"1900",
+    "2026-07-03":"0530","2026-07-04":"0530","2026-07-11":"0630" };
+  const workStart = (iso, shift) => START_OVR[iso] || (shift === "D" ? "0600" : "1800");
+  const rideStart = code => code[1] === "D" ? "0630" : "1830";   // all rideouts start 0630 or 1830
+  const ridePrefix = code => code[0] === "J" ? "RH" : "SV";       // RH = Rising Hill, SV = Streetsville
+  // Confirmed rideouts: J = Jairo (Rising Hill), S = Stiggy (Streetsville); D/N shift
+  const RIDE_SEED = {
+    "2026-06-24":"JN","2026-06-25":"JN",
+    "2026-07-02":"JD","2026-07-17":"JD","2026-07-18":"JD","2026-07-19":"JD",
+    "2026-07-27":"JD","2026-07-28":"JD","2026-07-29":"JD","2026-07-30":"JD",
+    "2026-08-14":"JD","2026-08-16":"JD","2026-08-26":"JD","2026-08-27":"JD",
+    "2026-09-12":"JD","2026-09-13":"JD",
+    "2026-07-13":"SN","2026-07-21":"SN","2026-07-22":"SN","2026-07-23":"SN",
+    "2026-08-10":"SN","2026-08-18":"SN","2026-08-19":"SN","2026-08-20":"SN",
+    "2026-09-04":"SN","2026-09-05":"SN","2026-09-06":"SN"
+  };
+  const PRECEPTOR = { J: "Jairo \u00b7 Rising Hill", S: "Stiggy \u00b7 Streetsville" };
+
+  const fmtISO = d => {
+    const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,"0"), dd = String(d.getDate()).padStart(2,"0");
+    return y + "-" + m + "-" + dd;
+  };
+  const addDays = (d,n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
+  const fromISO = iso => new Date(iso + "T00:00:00");
+  const idxOf = iso => Math.round((fromISO(iso) - START) / 86400000);
+  const shiftIso = (iso,n) => fmtISO(addDays(fromISO(iso), n));
+
+  let booked = new Set(BOOKED_SEED);
+  let rides = Object.assign({}, RIDE_SEED);
+  let range = { from:[2026,6], to:[2026,9], key:"junsep" };
+  const KEY = "rs-v1";
+
+  function loadSaved() {
+    try {
+      const v = localStorage.getItem(KEY);
+      if (v) {
+        const o = JSON.parse(v);
+        if (o && o.b && o.r) { booked = new Set(o.b); rides = o.r; note("loaded saved schedule"); }
+      }
+    } catch (e) {}
+  }
+  let saveT;
+  function persist() {
+    clearTimeout(saveT);
+    saveT = setTimeout(() => {
+      try { localStorage.setItem(KEY, JSON.stringify({ b:[...booked], r:rides })); note("changes saved on this device"); }
+      catch (e) { note("changes held in memory only"); }
+    }, 300);
+  }
+  function note(msg) {
+    const f = document.getElementById("rsSave");
+    if (f && f.dataset.msg !== msg) {
+      f.innerHTML = f.innerHTML.replace(/( \u00b7 <em>.*<\/em>)?$/, " \u00b7 <em>" + msg + "</em>");
+      f.dataset.msg = msg;
+    }
+  }
+
+  // ---- schedule logic ----
+  function baseWork(iso) {            // scheduled shift before book-offs: [shift, unit] or null
+    const i = idxOf(iso);
+    if (i < 0 || i >= N_DAYS) return null;
+    if (OVR[iso]) return OVR[iso];
+    if (R3[i] === ".") return null;
+    return [R3[i], iso >= FTCC_FROM ? "FTCC" : "SV-3"];
+  }
+  function effWork(iso) {             // shift letter actually worked, or null
+    if (booked.has(iso)) return null;
+    const b = baseWork(iso);
+    return b ? b[0] : null;
+  }
+  function rideAt(iso) { return rides[iso] || null; }   // "JD"|"JN"|"SD"|"SN"|null
+
+  function warningsFor(iso) {
+    const out = [];
+    const w = effWork(iso), r = rideAt(iso);
+    const prevIso = shiftIso(iso,-1), nextIso = shiftIso(iso,1);
+    if (r && w) out.push("Rideout and work shift on the same day \u2014 book the work shift off or move the rideout.");
+    if (r && r[1] === "D" && effWork(prevIso) === "N")
+      out.push("Your " + prevIso + " night shift ends the morning of this day rideout.");
+    if (r && r[1] === "D" && rideAt(prevIso) && rideAt(prevIso)[1] === "N")
+      out.push("Your " + prevIso + " night rideout ends the morning of this day rideout.");
+    if (r && r[1] === "N" && effWork(nextIso) === "D")
+      out.push("This night rideout ends at 06:00 \u2014 exactly when your " + nextIso + " day shift starts.");
+    return out;
+  }
+
+  const PRESETS = [
+    { key:"junsep", label:"Jun\u2013Sep", from:[2026,6], to:[2026,9] },
+    { key:"h1",     label:"Jan\u2013May", from:[2026,1], to:[2026,5] },
+    { key:"q4",     label:"Oct\u2013Dec", from:[2026,10], to:[2026,12] },
+    { key:"full",   label:"Full 2026", from:[2026,1], to:[2026,12] }
+  ];
+  function monthsInRange() {
+    const out = []; let y = range.from[0], m = range.from[1];
+    while (y < range.to[0] || (y === range.to[0] && m <= range.to[1])) {
+      out.push([y, m]); m++; if (m > 12) { m = 1; y++; }
+    }
+    return out;
+  }
+
+  const DOWS = ["Mo","Tu","We","Th","Fr","Sa","Su"];
+  const prevVals = {};
+  function setChip(id, val, animate) {
+    const el = document.getElementById(id);
+    const changed = prevVals[id] !== undefined && prevVals[id] !== val;
+    el.textContent = val; prevVals[id] = val;
+    if (animate && changed) {
+      const chip = el.closest(".rs-chip");
+      chip.classList.remove("pulse"); void chip.offsetWidth; chip.classList.add("pulse");
+    }
+  }
+  function rowHTML(color, main, why, full) {
+    return '<div class="rs-row' + (full ? ' full' : '') + '"><span class="rs-dot" style="background:' + color + '"></span>' +
+           main + '<span class="why">' + why + '</span></div>';
+  }
+  function fillList(id, rows, emptyMsg) {
+    const el = document.getElementById(id);
+    el.innerHTML = rows.length ? rows.join("") : "";
+    let sib = el.parentElement.querySelector(".rs-empty");
+    if (sib) sib.remove();
+    if (!rows.length) {
+      const e = document.createElement("div"); e.className = "rs-empty"; e.textContent = emptyMsg;
+      el.parentElement.appendChild(e);
+    }
+  }
+
+  function render(animate) {
+    const cont = document.getElementById("rsMonths");
+    cont.innerHTML = "";
+    const stats = { jai:0, stg:0, warn:0, off:0 };
+    const lists = { ride:[], warn:[], off:[] };
+
+    monthsInRange().forEach(ym => {
+      const y = ym[0], m = ym[1];
+      const first = new Date(y, m-1, 1);
+      const dim = new Date(y, m, 0).getDate();
+      const lead = (first.getDay() + 6) % 7;
+      const mEl = document.createElement("div");
+      mEl.className = "rs-month";
+      mEl.innerHTML = "<h3>" + first.toLocaleString("en-CA", { month:"long" }) + "<small>" + y + "</small></h3>";
+      const g = document.createElement("div");
+      g.className = "rs-grid";
+      DOWS.forEach(d => { const e = document.createElement("div"); e.className = "rs-dow"; e.textContent = d; g.appendChild(e); });
+      for (let k = 0; k < lead; k++) { const e = document.createElement("div"); e.className = "rs-day outside"; g.appendChild(e); }
+
+      for (let day = 1; day <= dim; day++) {
+        const date = new Date(y, m-1, day);
+        const iso = fmtISO(date);
+        const e = document.createElement("div");
+        e.className = "rs-day";
+
+        const bw = baseWork(iso);
+        const isBooked = booked.has(iso) && !!bw;
+        const w = effWork(iso);
+        const r = rideAt(iso);
+        const warns = warningsFor(iso);
+
+        let inner = '<span class="num">' + day + '</span>';
+        if (bw) {
+          if (isBooked) inner += '<span class="rs-pill work offd">' + workStart(iso, bw[0]) + '</span>';
+          else inner += '<span class="rs-pill work">' + workStart(iso, bw[0]) + '</span>';
+        }
+        if (r) {
+          const cls = r[0] === "J" ? "jai" : "stg";
+          inner += '<span class="rs-pill ' + cls + '">' + ridePrefix(r) + ' ' + rideStart(r) + '</span>';
+        }
+        if (warns.length) { e.classList.add("warn"); inner += '<span class="wicon">\u26a0\ufe0f</span>'; }
+        if (bw || r) e.classList.add("has-any");
+        e.innerHTML = inner;
+
+        let tip = date.toDateString();
+        if (bw) tip += isBooked ? " \u00b7 work booked off (was " + workStart(iso, bw[0]) + ")" : " \u00b7 work starts " + workStart(iso, bw[0]);
+        if (r) tip += " \u00b7 rideout " + PRECEPTOR[r[0]] + " starts " + rideStart(r);
+        if (warns.length) tip += " \u00b7 \u26a0 " + warns.join(" ");
+        tip += " \u00b7 tap to edit";
+        e.title = tip;
+        e.addEventListener("click", () => openSheet(iso));
+
+        const wd = date.toLocaleString("en-CA", { weekday:"short" });
+        if (r) {
+          if (r[0] === "J") stats.jai++; else stats.stg++;
+          lists.ride.push({ iso, wd, r });
+        }
+        if (warns.length) { stats.warn += warns.length; warns.forEach(t => lists.warn.push({ iso, wd, t })); }
+        if (isBooked) { stats.off++; lists.off.push({ iso, wd, unit: bw[1], s: bw[0] }); }
+        g.appendChild(e);
+      }
+      mEl.appendChild(g);
+      cont.appendChild(mEl);
+    });
+
+    setChip("rsJai", stats.jai, animate);
+    setChip("rsStg", stats.stg, animate);
+    setChip("rsHrs", (stats.jai + stats.stg) * 12, animate);
+    setChip("rsWarn", stats.warn, animate);
+    document.getElementById("rsNRide").textContent = stats.jai + stats.stg;
+    document.getElementById("rsNWarn").textContent = stats.warn;
+    document.getElementById("rsNOff").textContent = stats.off;
+
+    fillList("rsListRide", lists.ride.map(x =>
+      rowHTML(x.r[0] === "J" ? "#0d9488" : "#b45309", x.iso + " " + x.wd,
+        ridePrefix(x.r) + " " + rideStart(x.r) + " \u00b7 " + PRECEPTOR[x.r[0]])),
+      "No rideout shifts in this range.");
+    fillList("rsListWarn", lists.warn.map(x =>
+      rowHTML("#ef4444", x.iso + " " + x.wd, x.t, true)),
+      "No conflicts in this range.");
+    fillList("rsListOff", lists.off.map(x =>
+      rowHTML("#64748b", x.iso + " " + x.wd, workStart(x.iso, x.s) + " shift booked off")),
+      "No booked-off work days in this range.");
+  }
+
+  // ---- editor sheet ----
+  let sheetIso = null;
+  const $ = id => document.getElementById(id);
+  function openSheet(iso) {
+    sheetIso = iso;
+    const d = fromISO(iso);
+    $("rsSheetTitle").textContent = d.toLocaleDateString("en-CA", { weekday:"long", month:"long", day:"numeric", year:"numeric" });
+    refreshSheet();
+    $("rsBackdrop").classList.add("open");
+    $("rsSheet").classList.add("open");
+  }
+  function closeSheet() {
+    $("rsBackdrop").classList.remove("open");
+    $("rsSheet").classList.remove("open");
+    sheetIso = null;
+  }
+  function refreshSheet() {
+    const iso = sheetIso;
+    const bw = baseWork(iso);
+    const r = rideAt(iso);
+    const isBooked = booked.has(iso);
+    $("rsSheetSub").textContent = bw
+      ? "Scheduled work: starts " + workStart(iso, bw[0]) + " (" + (bw[0] === "D" ? "day" : "night") + ")" + (isBooked ? " \u2014 booked off" : "")
+      : "No work shift scheduled.";
+    // rideout options
+    const opts = [
+      { code:null, label:"None", cls:"sel-none" },
+      { code:"JD", label:"Jairo \u00b7 Day", cls:"sel-jai" },
+      { code:"JN", label:"Jairo \u00b7 Night", cls:"sel-jai" },
+      { code:"SD", label:"Stiggy \u00b7 Day", cls:"sel-stg" },
+      { code:"SN", label:"Stiggy \u00b7 Night", cls:"sel-stg" }
+    ];
+    const rw = $("rsSheetRide");
+    rw.innerHTML = "";
+    opts.forEach(o => {
+      const b = document.createElement("button");
+      b.className = "rs-opt " + o.cls + ((r || null) === o.code ? " active" : "");
+      b.textContent = o.label;
+      b.addEventListener("click", () => {
+        if (o.code) rides[iso] = o.code; else delete rides[iso];
+        persist(); render(true); refreshSheet();
+      });
+      rw.appendChild(b);
+    });
+    // work toggle
+    const ww = $("rsSheetWorkWrap");
+    if (bw) {
+      ww.style.display = "";
+      const w = $("rsSheetWork");
+      w.innerHTML = "";
+      [["work", "Working " + bw[1] + " " + bw[0], false], ["off", "Booked off", true]].forEach(([k, label, offVal]) => {
+        const b = document.createElement("button");
+        b.className = "rs-opt sel-work" + (isBooked === offVal ? " active" : "");
+        b.textContent = label;
+        b.addEventListener("click", () => {
+          if (offVal) booked.add(iso); else booked.delete(iso);
+          persist(); render(true); refreshSheet();
+        });
+        w.appendChild(b);
+      });
+    } else ww.style.display = "none";
+    // warnings
+    const warns = warningsFor(iso);
+    const wb = $("rsSheetWarn");
+    if (warns.length) { wb.style.display = ""; wb.innerHTML = "\u26a0\ufe0f " + warns.join("<br>\u26a0\ufe0f "); }
+    else wb.style.display = "none";
+  }
+  $("rsBackdrop").addEventListener("click", closeSheet);
+  $("rsSheetDone").addEventListener("click", closeSheet);
+
+  function buildRanges() {
+    const el = $("rsRanges");
+    el.innerHTML = "";
+    PRESETS.forEach(p => {
+      const b = document.createElement("button");
+      b.className = "rs-range" + (range.key === p.key ? " active" : "");
+      b.textContent = p.label;
+      b.addEventListener("click", () => { range = { from:p.from, to:p.to, key:p.key }; buildRanges(); render(false); });
+      el.appendChild(b);
+    });
+    const rs = document.createElement("button");
+    rs.className = "rs-reset"; rs.textContent = "reset to confirmed schedule";
+    rs.title = "Restore confirmed rideouts and FTCC book-offs";
+    rs.addEventListener("click", () => {
+      booked = new Set(BOOKED_SEED); rides = Object.assign({}, RIDE_SEED);
+      persist(); render(true);
+    });
+    el.appendChild(rs);
+  }
+
+  loadSaved();
+  buildRanges();
+  render(false);
+})();
+
+// Initial render
+render();
+
+// ─── PWA Service Worker Registration ───
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').then(reg => {
+    console.log('SW registered:', reg.scope);
+  }).catch(err => console.log('SW error:', err));
+}
+
+// ─── PWA Install Prompt ───
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  showInstallBanner();
+});
+
+function showInstallBanner() {
+  const banner = document.createElement('div');
+  banner.id = 'installBanner';
+  banner.style.cssText = `
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000;
+    background: var(--surface-2); border-top: 1px solid var(--border);
+    padding: 14px 20px; display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; font-family: var(--font);
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+  `;
+  banner.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span style="font-size:0.85rem;color:var(--text);">Install <strong>Schedules</strong> for quick access</span>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button id="installDismiss" style="background:none;border:1px solid var(--border);color:var(--text-muted);border-radius:6px;padding:6px 14px;cursor:pointer;font-family:var(--font);font-size:0.8rem;">Later</button>
+      <button id="installBtn" style="background:var(--accent);border:none;color:#0b0e13;border-radius:6px;padding:6px 14px;cursor:pointer;font-family:var(--font);font-size:0.8rem;font-weight:600;">Install</button>
+    </div>
+  `;
+  document.body.appendChild(banner);
+
+  document.getElementById('installBtn').addEventListener('click', async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const result = await deferredPrompt.userChoice;
+      deferredPrompt = null;
+    }
+    banner.remove();
+  });
+
+  document.getElementById('installDismiss').addEventListener('click', () => banner.remove());
+}
+
+window.addEventListener('appinstalled', () => {
+  const banner = document.getElementById('installBanner');
+  if (banner) banner.remove();
+  deferredPrompt = null;
+});
+</script>
+</body>
+</html>
